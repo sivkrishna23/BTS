@@ -165,29 +165,35 @@ def show_login_page():
 
 
 def show_admin_panel():
-    """Display admin panel."""
+    """Display admin panel with full access to everything."""
     st.markdown('<h1 class="gradient-text">👑 Admin Control Panel</h1>', unsafe_allow_html=True)
-    st.markdown("### **Full System Access**")
+    st.markdown("### **Full System Access - All Features Unlocked**")
     
     # Sidebar
     with st.sidebar:
         st.markdown("---")
         st.markdown("**👑 ADMIN MODE**")
         st.success("✅ Unlimited Access")
+        st.info("🔓 All Features Available")
         if st.button("🚪 Logout"):
             st.session_state.logged_in = False
             st.session_state.user_data = None
             st.session_state.is_admin = False
             st.rerun()
     
-    # Admin tabs
-    tab1, tab2, tab3, tab4 = st.tabs([
-        "📊 Dashboard",
+    # Admin tabs - ALL 8 TABS
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+        "📊 System Dashboard",
         "👥 User Management",
         "✅ Student Verification",
-        "💰 Subscription Management"
+        "💰 Subscriptions",
+        "📂 Data Upload",
+        "📊 EDA",
+        "🤖 Model Training",
+        "📈 Results"
     ])
     
+    # TAB 1: System Dashboard
     with tab1:
         st.header("📊 System Overview")
         
@@ -204,6 +210,7 @@ def show_admin_panel():
         col2.metric("⏳ Pending Verifications", stats['pending_verifications'])
         col3.metric("📈 Total Revenue", f"${stats['active_subscriptions'] * 10.99:.2f}/mo")
     
+    # TAB 2: User Management
     with tab2:
         st.header("👥 User Management")
         
@@ -255,6 +262,7 @@ def show_admin_panel():
         else:
             st.info("No users registered yet")
     
+    # TAB 3: Student Verification
     with tab3:
         st.header("✅ Student Verification")
         
@@ -285,6 +293,7 @@ def show_admin_panel():
         else:
             st.info("No pending student verifications")
     
+    # TAB 4: Subscription Management
     with tab4:
         st.header("💰 Subscription Management")
         
@@ -309,6 +318,232 @@ def show_admin_panel():
             st.metric("💵 Monthly Revenue", f"${total_revenue:.2f}")
         else:
             st.info("No active subscriptions")
+    
+    # TAB 5: Data Upload (Full Access)
+    with tab5:
+        st.header("📂 Data Upload & Processing")
+        
+        uploaded_file = st.file_uploader("Upload Border Crossing Data (CSV/Excel)", type=['csv', 'xlsx'])
+        
+        if uploaded_file is not None:
+            try:
+                with st.spinner("Processing data..."):
+                    temp_path = Path("data/raw") / uploaded_file.name
+                    temp_path.parent.mkdir(parents=True, exist_ok=True)
+                    with open(temp_path, "wb") as f:
+                        f.write(uploaded_file.getbuffer())
+                    
+                    df_raw = load_data(temp_path)
+                    st.success(f"✅ Loaded {len(df_raw):,} rows")
+                    
+                    progress_bar = st.progress(0)
+                    df_clean = standardize_columns(df_raw)
+                    progress_bar.progress(33)
+                    
+                    if 'date' in df_clean.columns:
+                        df_clean = clean_timestamps(df_clean, date_col='date')
+                    if 'value' in df_clean.columns:
+                        df_clean = clean_numeric(df_clean, col='value')
+                    progress_bar.progress(66)
+                    
+                    df_clean = handle_duplicates(df_clean)
+                    df_clean = impute_missing(df_clean)
+                    progress_bar.progress(100)
+                    
+                    st.session_state.df = df_clean
+                    st.success("✅ Data Pipeline Complete!")
+                    
+            except Exception as e:
+                st.error(f"❌ Error: {e}")
+        
+        elif Path("data/processed/cleaned_data.csv").exists():
+            st.info("ℹ️ Using existing processed data")
+            if st.session_state.df is None:
+                st.session_state.df = pd.read_csv("data/processed/cleaned_data.csv")
+                if 'timestamp' in st.session_state.df.columns:
+                    st.session_state.df['timestamp'] = pd.to_datetime(st.session_state.df['timestamp'])
+                if 'value' in st.session_state.df.columns:
+                    st.session_state.df = clean_numeric(st.session_state.df, col='value')
+        
+        if st.session_state.df is not None:
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("📊 Total Rows", f"{len(st.session_state.df):,}")
+            col2.metric("📅 From", f"{st.session_state.df['timestamp'].min().date()}")
+            col3.metric("📅 To", f"{st.session_state.df['timestamp'].max().date()}")
+            col4.metric("📈 Total Volume", f"{st.session_state.df['value'].sum()/1e6:.1f}M")
+    
+    # TAB 6: EDA (Full Access)
+    with tab6:
+        st.header("📊 Exploratory Data Analysis")
+        
+        if st.session_state.df is not None:
+            df = st.session_state.df.copy()
+            df_agg = df.groupby('timestamp')['value'].sum().reset_index()
+            
+            # Statistical Summary
+            st.subheader("📈 Statistical Summary")
+            stats_df = create_statistical_summary(df_agg)
+            col1, col2 = st.columns(2)
+            with col1:
+                st.dataframe(stats_df.iloc[:6], use_container_width=True)
+            with col2:
+                st.dataframe(stats_df.iloc[6:], use_container_width=True)
+            
+            # Distribution Analysis
+            st.subheader("📊 Distribution Analysis")
+            fig_dist = create_distribution_analysis(df_agg)
+            st.plotly_chart(fig_dist, use_container_width=True)
+            
+            # Temporal Patterns
+            st.subheader("🕐 Temporal Patterns")
+            fig_temporal = create_temporal_patterns(df_agg)
+            st.plotly_chart(fig_temporal, use_container_width=True)
+            
+            # Time Series Decomposition
+            st.subheader("📉 Time Series Decomposition")
+            with st.spinner("Performing seasonal decomposition..."):
+                try:
+                    fig_decomp = create_time_series_decomposition(df_agg)
+                    st.plotly_chart(fig_decomp, use_container_width=True)
+                except Exception as e:
+                    st.warning(f"Decomposition requires more data: {e}")
+            
+            # Correlation Analysis
+            st.subheader("🔗 Feature Correlation")
+            df_ml = prepare_ml_features(df_agg)
+            fig_corr = create_correlation_heatmap(df_ml)
+            st.plotly_chart(fig_corr, use_container_width=True)
+        else:
+            st.warning("⚠️ Please upload data first")
+    
+    # TAB 7: Model Training (Full Access)
+    with tab7:
+        st.header("🤖 Model Training & Forecasting")
+        
+        if st.session_state.df is not None:
+            df_agg = st.session_state.df.groupby('timestamp')['value'].sum().reset_index()
+            df_agg['year'] = df_agg['timestamp'].dt.year
+            
+            train_data = df_agg[df_agg['year'] <= 2024]
+            test_data = df_agg[df_agg['year'] == 2025]
+            
+            col1, col2, col3 = st.columns(3)
+            col1.metric("🎓 Training Data (≤2024)", f"{len(train_data):,} days")
+            col2.metric("🧪 Test Data (2025)", f"{len(test_data):,} days")
+            if len(train_data) + len(test_data) > 0:
+                col3.metric("📊 Split Ratio", f"{len(train_data)/(len(train_data)+len(test_data))*100:.1f}%")
+            
+            if len(test_data) > 0:
+                if st.button("🚀 Train All Models", use_container_width=True):
+                    with st.spinner("Training models..."):
+                        results = {}
+                        y_test_actual = test_data['value'].values
+                        test_dates = test_data['timestamp'].values
+                        
+                        df_ml = prepare_ml_features(df_agg)
+                        train_ml = df_ml[df_ml['year'] <= 2024].drop('year', axis=1)
+                        test_ml = df_ml[df_ml['year'] == 2025].drop('year', axis=1)
+                        
+                        st.write("📊 Training Prophet...")
+                        results['Prophet'] = train_predict_prophet(train_data, len(test_data))['forecast'].tail(len(test_data))['yhat'].values
+                        
+                        st.write("📈 Training SARIMA...")
+                        try:
+                            results['SARIMA'] = train_sarima(train_data, test_data)['test_pred']
+                        except:
+                            st.warning("SARIMA training skipped")
+                        
+                        st.write("🌲 Training XGBoost...")
+                        from xgboost import XGBRegressor
+                        feature_cols = [col for col in train_ml.columns if col not in ['value', 'timestamp']]
+                        xgb = XGBRegressor(n_estimators=500, max_depth=8, learning_rate=0.05, random_state=42)
+                        xgb.fit(train_ml[feature_cols], train_ml['value'])
+                        results['XGBoost'] = xgb.predict(test_ml[feature_cols])
+                        
+                        st.write("💡 Training LightGBM...")
+                        from lightgbm import LGBMRegressor
+                        lgbm = LGBMRegressor(n_estimators=500, num_leaves=128, learning_rate=0.03, random_state=42, verbose=-1)
+                        lgbm.fit(train_ml[feature_cols], train_ml['value'])
+                        results['LightGBM'] = lgbm.predict(test_ml[feature_cols])
+                        
+                        st.session_state.comparison_results = {
+                            'actual': y_test_actual,
+                            'dates': test_dates,
+                            'predictions': results
+                        }
+                        
+                        st.success("✅ All models trained!")
+            else:
+                st.warning("⚠️ No 2025 data for testing")
+        else:
+            st.warning("⚠️ Upload data first")
+    
+    # TAB 8: Results (Full Access)
+    with tab8:
+        st.header("📈 Results & Model Comparison")
+        
+        if st.session_state.comparison_results:
+            results = st.session_state.comparison_results
+            
+            # Visualization
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=results['dates'], y=results['actual'],
+                name='Actual', mode='lines+markers',
+                line=dict(color='#FFD700', width=4)
+            ))
+            
+            colors = {'Prophet': '#FF6B6B', 'SARIMA': '#4ECDC4', 'XGBoost': '#45B7D1', 'LightGBM': '#96CEB4'}
+            for model_name, preds in results['predictions'].items():
+                min_len = min(len(results['actual']), len(preds))
+                fig.add_trace(go.Scatter(
+                    x=results['dates'][:min_len], y=preds[:min_len],
+                    name=model_name, mode='lines',
+                    line=dict(color=colors.get(model_name, '#888'), width=2)
+                ))
+            
+            fig.update_layout(
+                title="Model Predictions vs Actual (2025)",
+                height=600,
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='white')
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Metrics
+            st.subheader("📊 Performance Metrics")
+            metrics_data = []
+            for model_name, preds in results['predictions'].items():
+                min_len = min(len(results['actual']), len(preds))
+                if min_len > 0:
+                    metrics = calculate_metrics(results['actual'][:min_len], preds[:min_len])
+                    metrics['Model'] = model_name
+                    metrics['Accuracy (%)'] = (1 - metrics['MAPE']/100) * 100
+                    metrics_data.append(metrics)
+            
+            df_metrics = pd.DataFrame(metrics_data)
+            st.dataframe(
+                df_metrics[['Model', 'R²', 'RMSE', 'MAE', 'MAPE', 'Accuracy (%)']].style.format({
+                    'R²': '{:.4f}', 'RMSE': '{:.2f}', 'MAE': '{:.2f}',
+                    'MAPE': '{:.2f}%', 'Accuracy (%)': '{:.2f}%'
+                }).highlight_max(axis=0, subset=['R²', 'Accuracy (%)'], color='lightgreen')
+                .highlight_min(axis=0, subset=['RMSE', 'MAE', 'MAPE'], color='lightgreen'),
+                use_container_width=True
+            )
+            
+            best_model = df_metrics.loc[df_metrics['R²'].idxmax(), 'Model']
+            best_r2 = df_metrics['R²'].max()
+            best_acc = df_metrics['Accuracy (%)'].max()
+            
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("🏆 Best Model", best_model)
+            col2.metric("📈 Best R²", f"{best_r2:.4f}")
+            col3.metric("✅ Best Accuracy", f"{best_acc:.2f}%")
+            col4.metric("📊 Models", len(df_metrics))
+        else:
+            st.info("ℹ️ Train models first")
+
 
 
 def show_dashboard():
