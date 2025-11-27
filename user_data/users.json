@@ -1,1 +1,14 @@
-{}
+{
+  "krish": {
+    "username": "krish",
+    "email": "aakisetty@cua.edu",
+    "password": "7d4eb046798bbdc3379482fb8bff6b3ff8a0178d9b0cb6d8d0e4e8d20aad0e28",
+    "user_type": "student",
+    "subscription_status": "free",
+    "registration_date": "2025-11-27T17:14:54.812610",
+    "trial_end_date": null,
+    "college_name": "catholic university of america",
+    "college_id_verified": true,
+    "college_id_path": "user_data\\college_ids\\krish_Screenshot (12).png"
+  }
+}

@@ -540,12 +540,6 @@ def show_admin_panel():
             col1.metric("🏆 Best Model", best_model)
             col2.metric("📈 Best R²", f"{best_r2:.4f}")
             col3.metric("✅ Best Accuracy", f"{best_acc:.2f}%")
-            col4.metric("📊 Models", len(df_metrics))
-        else:
-            st.info("ℹ️ Train models first")
-
-
-
 def show_dashboard():
     """Display main dashboard for logged-in users."""
     user = st.session_state.user_data
@@ -572,11 +566,12 @@ def show_dashboard():
             st.rerun()
     
     # Main tabs
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📂 Data Upload",
         "📊 Exploratory Data Analysis",
         "🤖 Model Training & Forecasting",
-        "📈 Results & Comparison"
+        "📈 Results & Comparison",
+        "🔮 Future Forecasts"
     ])
     
     # TAB 1: Data Upload
@@ -803,6 +798,116 @@ def show_dashboard():
             col4.metric("📊 Models", len(df_metrics))
         else:
             st.info("ℹ️ Train models first")
+    
+    # TAB 5: Future Forecasts
+    with tab5:
+        st.header("🔮 Future Forecasts & Port Analysis")
+        
+        if st.session_state.df is not None:
+            df = st.session_state.df
+            
+            # Port Selection
+            port_col = next((col for col in df.columns if 'port' in col), None)
+            
+            if port_col:
+                ports = ['All Ports'] + sorted(df[port_col].unique().tolist())
+                selected_port = st.selectbox("Select Port for Forecasting", ports)
+                
+                # Filter Data
+                if selected_port != 'All Ports':
+                    df_forecast = df[df[port_col] == selected_port].copy()
+                else:
+                    df_forecast = df.copy()
+                
+                # Aggregate
+                df_agg_forecast = df_forecast.groupby('timestamp')['value'].sum().reset_index()
+                
+                # Forecast Settings
+                horizon = st.slider("Forecast Horizon (Days)", 30, 365, 90)
+                
+                if st.button("🚀 Generate Future Forecast", use_container_width=True):
+                    with st.spinner(f"Generating forecast for {selected_port}..."):
+                        # Use Prophet for robust future forecasting
+                        forecast_results = train_predict_prophet(df_agg_forecast, horizon)
+                        forecast = forecast_results['forecast']
+                        
+                        # Plot
+                        fig_future = go.Figure()
+                        
+                        # Historical Data
+                        fig_future.add_trace(go.Scatter(
+                            x=df_agg_forecast['timestamp'], 
+                            y=df_agg_forecast['value'],
+                            name='Historical Data',
+                            line=dict(color='#00D9FF', width=2)
+                        ))
+                        
+                        # Forecast
+                        future_dates = forecast['ds'].tail(horizon)
+                        future_values = forecast['yhat'].tail(horizon)
+                        lower_bound = forecast['yhat_lower'].tail(horizon)
+                        upper_bound = forecast['yhat_upper'].tail(horizon)
+                        
+                        fig_future.add_trace(go.Scatter(
+                            x=future_dates, 
+                            y=future_values,
+                            name='Future Forecast',
+                            line=dict(color='#FF2E63', width=3)
+                        ))
+                        
+                        # Confidence Interval
+                        fig_future.add_trace(go.Scatter(
+                            x=pd.concat([future_dates, future_dates[::-1]]),
+                            y=pd.concat([upper_bound, lower_bound[::-1]]),
+                            fill='toself',
+                            fillcolor='rgba(255, 46, 99, 0.2)',
+                            line=dict(color='rgba(255,255,255,0)'),
+                            name='Confidence Interval'
+                        ))
+                        
+                        fig_future.update_layout(
+                            title=f"Traffic Forecast: {selected_port} (Next {horizon} Days)",
+                            xaxis_title="Date",
+                            yaxis_title="Traffic Volume",
+                            height=600,
+                            plot_bgcolor='rgba(0,0,0,0)',
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            font=dict(color='white')
+                        )
+                        
+                        st.plotly_chart(fig_future, use_container_width=True)
+                        
+                        # Future Statistics
+                        st.subheader("📊 Forecast Insights")
+                        avg_future = future_values.mean()
+                        max_future = future_values.max()
+                        min_future = future_values.min()
+                        growth = (avg_future - df_agg_forecast['value'].mean()) / df_agg_forecast['value'].mean() * 100
+                        
+                        c1, c2, c3, c4 = st.columns(4)
+                        c1.metric("Avg Predicted Volume", f"{avg_future:,.0f}")
+                        c2.metric("Peak Volume", f"{max_future:,.0f}")
+                        c3.metric("Lowest Volume", f"{min_future:,.0f}")
+                        c4.metric("Projected Growth", f"{growth:+.1f}%", delta_color="normal")
+            else:
+                st.warning("⚠️ No 'Port' column found in dataset. Showing aggregate forecast.")
+                
+                # Aggregate forecast fallback
+                df_agg_forecast = df.groupby('timestamp')['value'].sum().reset_index()
+                horizon = st.slider("Forecast Horizon (Days)", 30, 365, 90)
+                
+                if st.button("🚀 Generate Future Forecast", use_container_width=True):
+                    with st.spinner("Generating aggregate forecast..."):
+                        forecast_results = train_predict_prophet(df_agg_forecast, horizon)
+                        forecast = forecast_results['forecast']
+                        
+                        # Plot
+                        fig_future = go.Figure()
+                        fig_future.add_trace(go.Scatter(x=df_agg_forecast['timestamp'], y=df_agg_forecast['value'], name='Historical', line=dict(color='#00D9FF')))
+                        fig_future.add_trace(go.Scatter(x=forecast['ds'].tail(horizon), y=forecast['yhat'].tail(horizon), name='Forecast', line=dict(color='#FF2E63')))
+                        st.plotly_chart(fig_future, use_container_width=True)
+        else:
+            st.warning("⚠️ Please upload data first")
 
 # Session state initialization
 if 'logged_in' not in st.session_state:
