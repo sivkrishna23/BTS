@@ -94,23 +94,32 @@ def get_custom_css():
             box-shadow: 0 8px 30px rgba(255, 46, 99, 0.6);
         }
         
-        /* Input fields - Bright borders */
+        /* Input fields - White background with black text */
         .stTextInput > div > div > input,
         .stSelectbox > div > div > div,
-        .stTextArea > div > div > textarea {
-            background: rgba(255, 255, 255, 0.1) !important;
-            color: #FFFFFF !important;
+        .stTextArea > div > div > textarea,
+        .stNumberInput > div > div > input {
+            background: #FFFFFF !important;
+            color: #000000 !important;
             border: 2px solid #00D9FF !important;
             border-radius: 10px !important;
             font-size: 1rem !important;
             padding: 12px !important;
+            font-weight: 600 !important;
         }
         
         .stTextInput > div > div > input:focus,
         .stSelectbox > div > div > div:focus,
-        .stTextArea > div > div > textarea:focus {
+        .stTextArea > div > div > textarea:focus,
+        .stNumberInput > div > div > input:focus {
             border-color: #FF2E63 !important;
             box-shadow: 0 0 15px rgba(255, 46, 99, 0.5) !important;
+        }
+        
+        /* Selectbox dropdown items */
+        .stSelectbox > div > div > ul > li {
+            color: #000000 !important;
+            background: #FFFFFF !important;
         }
         
         /* Metric cards - Bright glassmorphism */
