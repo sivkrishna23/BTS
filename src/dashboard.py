@@ -32,7 +32,7 @@ st.markdown(get_custom_css(), unsafe_allow_html=True)
 
 # Title with gradient effect
 st.markdown('<h1 class="gradient-text">🛂 Border Crossing Traffic Forecasting Platform</h1>', unsafe_allow_html=True)
-st.markdown("### **AI-Powered Predictive Analytics | Train on ≤2024 → Test on 2025**")
+st.markdown("### **Predictive Analytics | Train on ≤2024 → Test on 2025**")
 
 # Global state
 if 'df' not in st.session_state:

@@ -1,12 +1,3 @@
-# 🛂 Border Crossing Traffic Forecasting Platform
-
-A comprehensive AI-powered forecasting system for US Border Crossing traffic prediction using multiple machine learning models with a premium analytics dashboard.
-
-![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.20+-red.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
-
-## 🌟 Features
 
 ### 📊 Advanced ML Models
 - **Prophet** - Facebook's time series forecaster with holiday effects
@@ -165,4 +156,8 @@ For questions or feedback, please open an issue on GitHub.
 
 ---
 
-**Built with ❤️ using Python, Streamlit, and advanced ML techniques**
+**Built with Python, Streamlit, and advanced ML techniques**
+=======
+# BTS
+Border crossing analyis and forecasting
+>>>>>>> b4018e1813d5ce354b5dd88f6b969163274320cc
