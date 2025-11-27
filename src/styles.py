@@ -94,18 +94,18 @@ def get_custom_css():
             box-shadow: 0 8px 30px rgba(255, 46, 99, 0.6);
         }
         
-        /* Input fields - White background with black text */
+        /* Input fields - White background with Bright Blue text */
         .stTextInput > div > div > input,
         .stSelectbox > div > div > div,
         .stTextArea > div > div > textarea,
         .stNumberInput > div > div > input {
             background: #FFFFFF !important;
-            color: #000000 !important;
+            color: #0044FF !important; /* Bright Blue */
             border: 2px solid #00D9FF !important;
             border-radius: 10px !important;
             font-size: 1rem !important;
             padding: 12px !important;
-            font-weight: 600 !important;
+            font-weight: 700 !important;
         }
         
         .stTextInput > div > div > input:focus,
@@ -114,11 +114,12 @@ def get_custom_css():
         .stNumberInput > div > div > input:focus {
             border-color: #FF2E63 !important;
             box-shadow: 0 0 15px rgba(255, 46, 99, 0.5) !important;
+            color: #FF2E63 !important; /* Hot Pink on focus */
         }
         
         /* Selectbox dropdown items */
         .stSelectbox > div > div > ul > li {
-            color: #000000 !important;
+            color: #0044FF !important;
             background: #FFFFFF !important;
         }
         
